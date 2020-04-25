@@ -4,8 +4,12 @@
 #include<unistd.h>
 #include<sys/wait.h>
 #include<stdlib.h>
-
-int n,process_count =1, process_limit;
+#include<signal.h>
+typedef struct route_and_distance{
+	int distance;
+	int* route[50]; 
+}rad;
+int n,process_count =1, process_limit, ans=2047400008, route_count =0;;
 int dist[50][50],pre[50], fd[2];
 bool visited[50] ={true,};
 int length(int *arr, int k);
@@ -15,8 +19,13 @@ void pre_add(int *arr, int k, int add_num);
 int fun(int a, int* prefix);
 int back(int* arr,int k);
 void parent(int k,int *arr, int c);
-
+void handler(int sig);
+void init_arr(int *arr);
 int main(int argc, char *argv[] ){
+	signal(SIGCHLD,handler);
+	init_arr(pre);
+	init_arr(bestroute);
+	pipe(fd);
 	FILE *fp = fopen(argv[1],"r");
 	fscanf(fp,"%d", &n);
 	for(int i=0; i<n; i++){
@@ -44,8 +53,12 @@ int main(int argc, char *argv[] ){
 		for(int j =0; j<n; j++){
 			scanf("%d",&dist[i][j]);
 		}
+
 	}*/
-	parent(4,pre,0);
+	if(n==13)
+		parent(3,pre,0);
+	else
+		parent(n-12,pre,0);
 //	pre_add(pre,n,3);
 //	printf("%d %d\n",length(pre,n), pre[1]);
 //	printf("%d\n",fun(0,pre));
@@ -59,6 +72,11 @@ int length(int *arr, int k){
 		else break;
 	}
 	return c;
+}
+void init_arr(int *arr){
+	for(int i=0; i<50; i++){
+		arr[i]=0;
+	}
 }
 void pre_add(int *arr, int k, int add_num){
 	for(int i=1; i<k; i++){
@@ -76,9 +94,8 @@ int min(int a, int b){
 	else return b;
 }
 int fun(int a, int* prefix){
-	if(length(prefix,n)== n) return a+dist[back(prefix,n)][0];
-
 	int ret= 1000000007;
+	if(length(prefix,n)== n) return a+dist[back(prefix,n)][0];
 	for(int i=0; i<n; i++){
 		if(visited[i]==true) continue;
 		int here = back(prefix,n);
@@ -97,7 +114,9 @@ int fun(int a, int* prefix){
 		printf("\n");
 		printf("%d , %d , %d \n" ,a,i,c);*/
 		ret = min(fun(a+dist[here][i],prefix),ret);
-
+		if(ret > a+dist[here][i]+dist[back(prefix,n)])
+						
+			
 		//	printf("%d , %d , %d : %d\n" ,a+dist[k][i],i,c,ret);
 
 		visited[i] = false;
@@ -116,30 +135,28 @@ int back(int* arr,int k){
 }
 void parent(int k,int *arr, int c){
 	int sending=0, pid;
-	
 	if(length(arr,n)==k){
-		 pipe(fd);
-		if (state == -1){
-			printf("error\n");
-		
+i		route_count++;
 	
 		while(process_count>process_limit){
-				printf("in while process:  %d\n", process_count);
-                                read(fd[0], &sending, sizeof(int));
-                                process_count = process_count-sending;
-				printf("count: %d\n",process_count);
-                                sending=0;
+			//	printf("in while process:  %d\n", process_count);
+                               // read(fd[0], &sending, sizeof(int));
+                               // process_count = process_count-sending;
+			//	printf("count: %d\n",process_count);
+                               // sending=0;
                         };
                         pid = fork();
                         process_count++;
 		if(pid ==0){
-			printf("%d ",fun(c,arr));
+			int tmp = fun(c,arr);
+			ans = min(ans,tmp);
+			printf("%d ",tmp);
 			for(int i=0; i<length(arr,n); i++){
                         	printf("%d ", arr[i]);
               	  	}
 			printf("\n");
-			int send=1;
-			write(fd[1],&send,sizeof(int));
+		//	int send=1;
+		//	write(fd[1],&send,sizeof(int));
 			exit(0) ;	
 		}
 	}
@@ -157,3 +174,11 @@ void parent(int k,int *arr, int c){
 	}
 
 }
+
+void handler (int sig){
+	if(sig == SIGCHLD){
+		process_count--;
+		
+	}
+}
+
