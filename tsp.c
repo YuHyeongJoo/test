@@ -1,31 +1,54 @@
 #include <stdio.h>
 #include <stdbool.h>
-int n;
-int dist[50][50],pre[50];
+#include<sys/types.h>
+#include<unistd.h>
+#include<sys/wait.h>
+#include<stdlib.h>
+
+int n,process_count =1, process_limit;
+int dist[50][50],pre[50], fd[2];
 bool visited[50] ={true,};
 int length(int *arr, int k);
 int min(int a, int b);
 void pre_clear(int *arr, int k);
 void pre_add(int *arr, int k, int add_num);
-int fun(int a, int k, int* prefix);
+int fun(int a, int* prefix);
 int back(int* arr,int k);
 void parent(int k,int *arr, int c);
 
-int main(){
+int main(int argc, char *argv[] ){
+	FILE *fp = fopen(argv[1],"r");
+	fscanf(fp,"%d", &n);
+	for(int i=0; i<n; i++){
+   		 for(int j=0; j<n; j++){
+      			fscanf(fp,"%d", &dist[i][j]);
+   		 }
+ 	 }
+	process_limit = atoi(argv[2]);
 
-	scanf("%d", &n);
+/*	int state = pipe(fd);
+	int pid = fork();
+	if(pid==0){
+		int kk =10;
+		write(fd[1],&kk,sizeof(kk));
+		exit(0); 	
+	}
+	else{
+		read(fd[0], &n, sizeof(int));
+		printf("written n is : %d\n",n);
+	}*/
+/*	scanf("%d", &n);
 	for(int i=0; i<n; i++){
 		pre[i]=0;
-	}
-	for(int i=0; i<n; i++){
+	}*	for(int i=0; i<n; i++){
 		for(int j =0; j<n; j++){
 			scanf("%d",&dist[i][j]);
 		}
-	}
+	}*/
 	parent(4,pre,0);
 //	pre_add(pre,n,3);
 //	printf("%d %d\n",length(pre,n), pre[1]);
-//	printf("%d\n",fun(0,0,pre));
+//	printf("%d\n",fun(0,pre));
 
 }
 
@@ -52,7 +75,7 @@ int min(int a, int b){
 	if(a<b) return a;
 	else return b;
 }
-int fun(int a, int k, int* prefix){
+int fun(int a, int* prefix){
 	if(length(prefix,n)== n) return a+dist[back(prefix,n)][0];
 
 	int ret= 1000000007;
@@ -73,7 +96,7 @@ int fun(int a, int k, int* prefix){
 		}
 		printf("\n");
 		printf("%d , %d , %d \n" ,a,i,c);*/
-		ret = min(fun(a+dist[here][i],i,prefix),ret);
+		ret = min(fun(a+dist[here][i],prefix),ret);
 
 		//	printf("%d , %d , %d : %d\n" ,a+dist[k][i],i,c,ret);
 
@@ -92,21 +115,43 @@ int back(int* arr,int k){
 	return tmp;
 }
 void parent(int k,int *arr, int c){
+	int sending=0, pid;
+	
 	if(length(arr,n)==k){
-		for(int i=0; i<length(arr,n); i++){
-			printf("%d ", arr[i]);
+		 pipe(fd);
+		if (state == -1){
+			printf("error\n");
+		
+	
+		while(process_count>process_limit){
+				printf("in while process:  %d\n", process_count);
+                                read(fd[0], &sending, sizeof(int));
+                                process_count = process_count-sending;
+				printf("count: %d\n",process_count);
+                                sending=0;
+                        };
+                        pid = fork();
+                        process_count++;
+		if(pid ==0){
+			printf("%d ",fun(c,arr));
+			for(int i=0; i<length(arr,n); i++){
+                        	printf("%d ", arr[i]);
+              	  	}
+			printf("\n");
+			int send=1;
+			write(fd[1],&send,sizeof(int));
+			exit(0) ;	
 		}
-		printf("\n");
 	}
-	else{
+	else{	
 		for(int i=0; i<n; i++){
-	    if(visited[i]==true) continue;
+	    		if(visited[i]==true) continue;
 			int here = back(arr,n);
 			if(dist[here][i]==0) continue ;
-	    visited[i] = true;
-	    pre_add(arr,n,i);
-			parent(k,arr,c);
-	    visited[i] = false;
+	    		visited[i] = true;
+	    		pre_add(arr,n,i);
+			parent(k,arr,c+dist[here][i]);
+		 	visited[i] = false;
 			pre_clear(arr,n);
 	  }
 	}
