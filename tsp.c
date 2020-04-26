@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include<string.h>
 #include <stdbool.h>
 #include<sys/types.h>
 #include<unistd.h>
@@ -7,24 +8,28 @@
 #include<signal.h>
 typedef struct route_and_distance{
 	int distance;
-	int* route[50]; 
+	int route[50];
+	char best_route_uptonow[200]; 
 }rad;
-int n,process_count =1, process_limit, ans=2047400008, route_count =0;;
-int dist[50][50],pre[50], fd[2];
+rad ans = {2000000008};
+int n,process_count =1, process_limit, route_count =0;;
+int dist[50][50],fd[2];
 bool visited[50] ={true,};
-int length(int *arr, int k);
-int min(int a, int b);
-void pre_clear(int *arr, int k);
-void pre_add(int *arr, int k, int add_num);
-int fun(int a, int* prefix);
-int back(int* arr,int k);
-void parent(int k,int *arr, int c);
+int length(rad arr, int k);
+rad min(rad a, rad b);
+rad pre_clear(rad arr, int k);
+rad pre_add(rad arr, int k, int add_num);
+rad fun(rad prefix);
+int back(rad arr,int k);
+void parent(int k,rad arr);
 void handler(int sig);
-void init_arr(int *arr);
+rad init_arr(rad arr);
 int main(int argc, char *argv[] ){
+	printf("new strucy type!\n");
 	signal(SIGCHLD,handler);
-	init_arr(pre);
-	init_arr(bestroute);
+	rad pref;
+	pref = init_arr(pref);
+	pref.distance= 0;
 	pipe(fd);
 	FILE *fp = fopen(argv[1],"r");
 	fscanf(fp,"%d", &n);
@@ -55,54 +60,76 @@ int main(int argc, char *argv[] ){
 		}
 
 	}*/
-	if(n==13)
-		parent(3,pre,0);
-	else
-		parent(n-12,pre,0);
+
+	ans=init_arr(ans);
+//	if(n==13)
+		parent(n-11,pref);
+//	else
+//		parent(n-12,pref);
+	while( (wait(NULL)) > 0 );
 //	pre_add(pre,n,3);
 //	printf("%d %d\n",length(pre,n), pre[1]);
 //	printf("%d\n",fun(0,pre));
+	printf("\n best: %d and %s \n",ans.distance,ans.best_route_uptonow);
 
 }
-
-int length(int *arr, int k){
+char* int_to_string(rad arr){
+	char *result;
+	result = malloc(200);
+	for(int i=0; i<length(arr,n);i++){
+		char tmp[5];
+		int num = arr.route[i];
+		sprintf(tmp, "%d", num);
+		strcat(result,tmp);
+		strcat(result, "->");
+	}	
+	return result;
+}
+int length(rad arr, int k){
 	int c=1;
 	for(int i=1; i<k; i++){
-		if(arr[i]!=0) c++;
+		if(arr.route[i]!=0) c++;
 		else break;
 	}
 	return c;
 }
-void init_arr(int *arr){
+rad init_arr(rad arr){
 	for(int i=0; i<50; i++){
-		arr[i]=0;
+		arr.route[i]=0;
 	}
+	return arr;
 }
-void pre_add(int *arr, int k, int add_num){
+rad pre_add(rad arr, int k, int add_num){
 	for(int i=1; i<k; i++){
-		if(arr[i]==0){
-			arr[i] = add_num;
+		if(arr.route[i]==0){
+			arr.route[i] = add_num;
 			break;
 		}
 	}
+	return arr;
 }
-void pre_clear(int *arr, int k){
-	arr[length(arr,n)-1] = 0;
+rad pre_clear(rad arr, int k){
+	arr.route[length(arr,n)-1] = 0;
+	return arr;
 }
-int min(int a, int b){
-	if(a<b) return a;
+rad min(rad a, rad b){
+	if(a.distance<b.distance) return a;
 	else return b;
 }
-int fun(int a, int* prefix){
-	int ret= 1000000007;
-	if(length(prefix,n)== n) return a+dist[back(prefix,n)][0];
+rad fun(rad prefix){
+	rad ret;
+	ret.distance=1000000007;
+	if(length(prefix,n)== n){
+		prefix.distance +=dist[back(prefix,n)][0];
+		return prefix;
+	}
 	for(int i=0; i<n; i++){
 		if(visited[i]==true) continue;
 		int here = back(prefix,n);
 		if(dist[here][i]==0) continue ;
 	//	printf("i: %d \n",i);
 		visited[i]=true;
-		pre_add(prefix,n,i);
+		prefix = pre_add(prefix,n,i);
 	/*	for(int i=0; i<length(prefix,n); i++){
 			printf("%d ",prefix[i]);
 
@@ -113,30 +140,32 @@ int fun(int a, int* prefix){
 		}
 		printf("\n");
 		printf("%d , %d , %d \n" ,a,i,c);*/
-		ret = min(fun(a+dist[here][i],prefix),ret);
-		if(ret > a+dist[here][i]+dist[back(prefix,n)])
+		prefix.distance +=dist[here][i];
+		ret = min(fun(prefix),ret);
+		//if(ret > a+dist[here][i]+dist[back(prefix,n)])
 						
 			
-		//	printf("%d , %d , %d : %d\n" ,a+dist[k][i],i,c,ret);
+	//	printf("%d , %d , %d : %d\n" ,a+dist[k][i],i,c,ret);
 
 		visited[i] = false;
-		pre_clear(prefix,n);
+		prefix.distance -= dist[here][i];
+		prefix = pre_clear(prefix,n);
 	}
 	return ret;
 }
-int back(int* arr,int k){
-	int tmp = arr[0];
+int back(rad arr,int k){
+	int tmp = arr.route[0];
 	for(int i=1; i<k; i++){
 
-		if(arr[i]==0) break;
-		tmp = arr[i];
+		if(arr.route[i]==0) break;
+		tmp = arr.route[i];
 	}
 	return tmp;
 }
-void parent(int k,int *arr, int c){
-	int sending=0, pid;
+void parent(int k, rad arr){
+	int pid;
 	if(length(arr,n)==k){
-i		route_count++;
+		route_count++;
 	
 		while(process_count>process_limit){
 			//	printf("in while process:  %d\n", process_count);
@@ -148,13 +177,16 @@ i		route_count++;
                         pid = fork();
                         process_count++;
 		if(pid ==0){
-			int tmp = fun(c,arr);
-			ans = min(ans,tmp);
-			printf("%d ",tmp);
-			for(int i=0; i<length(arr,n); i++){
-                        	printf("%d ", arr[i]);
-              	  	}
-			printf("\n");
+		
+			rad tmp = fun(arr);
+			int current_distance = tmp.distance;
+			write(fd[1],&current_distance,sizeof(int));
+			printf("tmp: %d ", current_distance);
+			char route_string[200];
+		 	strcpy(route_string,int_to_string(tmp));
+                        printf("%s \n", route_string);
+              	  	write(fd[1], route_string,200);
+			
 		//	int send=1;
 		//	write(fd[1],&send,sizeof(int));
 			exit(0) ;	
@@ -166,19 +198,33 @@ i		route_count++;
 			int here = back(arr,n);
 			if(dist[here][i]==0) continue ;
 	    		visited[i] = true;
-	    		pre_add(arr,n,i);
-			parent(k,arr,c+dist[here][i]);
+	    		arr= pre_add(arr,n,i);
+			arr.distance+=dist[here][i];
+		//	for(int i=0; i<length(arr,n); i++){
+		//		printf("k: %d ",arr.route[i]);
+		//	}
+		//	printf("%d\n",arr.distance);
+			parent(k,arr);
 		 	visited[i] = false;
-			pre_clear(arr,n);
+			arr.distance -= dist[here][i];
+			arr =pre_clear(arr,n);
 	  }
 	}
 
 }
 
 void handler (int sig){
-	if(sig == SIGCHLD){
+	
+		int tmp2;
+		char best_route[200];
 		process_count--;
+		read(fd[0], &tmp2, sizeof(int));
+		read(fd[0], best_route, 200);
+		if(ans.distance>tmp2){
+			ans.distance = tmp2;
+			strcpy(ans.best_route_uptonow,best_route);
+		}
 		
-	}
+	
 }
 
