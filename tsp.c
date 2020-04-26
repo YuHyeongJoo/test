@@ -12,7 +12,7 @@ typedef struct route_and_distance{
 	char best_route_uptonow[200]; 
 }rad;
 rad ans = {2000000008};
-int n,process_count =1, process_limit, route_count =0;;
+int n,process_count =1, process_limit, route_count =0, parent_pid;;
 int dist[50][50],fd[2];
 bool visited[50] ={true,};
 int length(rad arr, int k);
@@ -23,10 +23,13 @@ rad fun(rad prefix);
 int back(rad arr,int k);
 void parent(int k,rad arr);
 void handler(int sig);
+void sigint_handler(int sig);
 rad init_arr(rad arr);
 int main(int argc, char *argv[] ){
+	parent_pid = getpid();
 	printf("new strucy type!\n");
 	signal(SIGCHLD,handler);
+	signal(SIGINT,sigint_handler);
 	rad pref;
 	pref = init_arr(pref);
 	pref.distance= 0;
@@ -70,7 +73,7 @@ int main(int argc, char *argv[] ){
 //	pre_add(pre,n,3);
 //	printf("%d %d\n",length(pre,n), pre[1]);
 //	printf("%d\n",fun(0,pre));
-	printf("\n best: %d and %s \n",ans.distance,ans.best_route_uptonow);
+	printf("\nbest: %d best route: %s \n",ans.distance,ans.best_route_uptonow);
 
 }
 char* int_to_string(rad arr){
@@ -177,14 +180,14 @@ void parent(int k, rad arr){
                         pid = fork();
                         process_count++;
 		if(pid ==0){
-		
+			printf("A child process is executing\n");	
 			rad tmp = fun(arr);
 			int current_distance = tmp.distance;
 			write(fd[1],&current_distance,sizeof(int));
-			printf("tmp: %d ", current_distance);
+		//	printf("tmp: %d ", current_distance);
 			char route_string[200];
 		 	strcpy(route_string,int_to_string(tmp));
-                        printf("%s \n", route_string);
+                  //      printf("%s \n", route_string);
               	  	write(fd[1], route_string,200);
 			
 		//	int send=1;
@@ -220,11 +223,17 @@ void handler (int sig){
 		process_count--;
 		read(fd[0], &tmp2, sizeof(int));
 		read(fd[0], best_route, 200);
-		if(ans.distance>tmp2){
+		printf("A Child Process Dead. Its return values are distance:  %d route:  %s \n",tmp2,best_route);
+		if(ans.distance>tmp2){	
+			printf("--------------------------------------------  best route was updated  distanbe:  %d  route:  %s\n",tmp2,best_route);
 			ans.distance = tmp2;
 			strcpy(ans.best_route_uptonow,best_route);
 		}
 		
 	
 }
-
+void sigint_handler(int sig){
+	if(getpid()==parent_pid){
+		printf("\nbest : %d\nroute: %s\n",ans.distance,ans.best_route_uptonow);}
+	exit(0);
+}
