@@ -73,7 +73,7 @@ int main(int argc, char *argv[] ){
 //	pre_add(pre,n,3);
 //	printf("%d %d\n",length(pre,n), pre[1]);
 //	printf("%d\n",fun(0,pre));
-	printf("\nbest: %d best route: %s \n",ans.distance,ans.best_route_uptonow);
+	printf("\nShortest distance: %d  The number of route: %d   \nShortest route: %s \n",ans.distance,route_count*12*10*9*8*6*5*4*3*2 ,ans.best_route_uptonow);
 
 }
 char* int_to_string(rad arr){
@@ -178,9 +178,10 @@ void parent(int k, rad arr){
                                // sending=0;
                         };
                         pid = fork();
+			route_count++;
                         process_count++;
 		if(pid ==0){
-			printf("A child process is executing\n");	
+			printf("A child process is executed\n");	
 			rad tmp = fun(arr);
 			int current_distance = tmp.distance;
 			write(fd[1],&current_distance,sizeof(int));
@@ -223,9 +224,9 @@ void handler (int sig){
 		process_count--;
 		read(fd[0], &tmp2, sizeof(int));
 		read(fd[0], best_route, 200);
-		printf("A Child Process Dead. Its return values are distance:  %d route:  %s \n",tmp2,best_route);
+		printf("A Child Process is Dead. It returned  Distance:%d   Path:  %s \n",tmp2,best_route);
 		if(ans.distance>tmp2){	
-			printf("--------------------------------------------  best route was updated  distanbe:  %d  route:  %s\n",tmp2,best_route);
+			printf("\nThe shortest route was updated   Distanbe: %d    Path: %s\n",tmp2,best_route);
 			ans.distance = tmp2;
 			strcpy(ans.best_route_uptonow,best_route);
 		}
@@ -234,6 +235,8 @@ void handler (int sig){
 }
 void sigint_handler(int sig){
 	if(getpid()==parent_pid){
-		printf("\nbest : %d\nroute: %s\n",ans.distance,ans.best_route_uptonow);}
+		if(ans.distance == 2000000008)
+			printf("No child processes have been terminated. So there is no path found\n");
+		printf("\nShortest distance upto now: %d  The number of route upto now : %d * 12! \nShortest route upto now: %s\n",ans.distance,route_count,ans.best_route_uptonow);}
 	exit(0);
 }
