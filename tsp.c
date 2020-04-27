@@ -12,7 +12,7 @@ typedef struct route_and_distance{
 	char best_route_uptonow[200]; 
 }rad;
 rad ans = {2000000008};
-int n,process_count =1, process_limit, parent_pid;;
+int n=0,process_count =1, process_limit, parent_pid;;
 unsigned long long route_count =0;
 int dist[50][50],fd[2];
 bool visited[50] ={true,};
@@ -35,17 +35,26 @@ int main(int argc, char *argv[] ){
 	pref.distance= 0;
 	pipe(fd);
 	FILE *fp = fopen(argv[1],"r");
-	fscanf(fp,"%d", &n);
+	char strTemp[255];
+	fgets(strTemp,sizeof(strTemp),fp);
+	char *ptr = strtok(strTemp, " ");
+	while(ptr!=NULL){
+		ptr = strtok(NULL, " ");
+		n++;
+	}
+	
+	rewind(fp);
+
 	for(int i=0; i<n; i++){
-   		 for(int j=0; j<n; j++){
+		 for(int j=0; j<n; j++){
       			fscanf(fp,"%d", &dist[i][j]);
-   		 }
- 	 }
+  		 }
+	 }
 	process_limit = atoi(argv[2]);
 
 
 	ans=init_arr(ans);
-		parent(n-12,pref);
+	parent(n-12,pref);
 	while( (wait(NULL)) > 0 );
 	printf("\nShortest distance: %d  The number of route: %lld   \nShortest route: %s \n",ans.distance,route_count*2*3*4*5*6*7*8*9*10*11*12 ,ans.best_route_uptonow);
 
