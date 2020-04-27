@@ -12,14 +12,15 @@ typedef struct route_and_distance{
 	char best_route_uptonow[200]; 
 }rad;
 rad ans = {2000000008};
-int n,process_count =1, process_limit, route_count =0, parent_pid;;
+int n,process_count =1, process_limit, parent_pid;;
+unsigned long long route_count =0;
 int dist[50][50],fd[2];
 bool visited[50] ={true,};
 int length(rad arr, int k);
 rad min(rad a, rad b);
 rad pre_clear(rad arr, int k);
 rad pre_add(rad arr, int k, int add_num);
-rad fun(rad prefix);
+rad chld(rad prefix);
 int back(rad arr,int k);
 void parent(int k,rad arr);
 void handler(int sig);
@@ -27,7 +28,6 @@ void sigint_handler(int sig);
 rad init_arr(rad arr);
 int main(int argc, char *argv[] ){
 	parent_pid = getpid();
-	printf("new strucy type!\n");
 	signal(SIGCHLD,handler);
 	signal(SIGINT,sigint_handler);
 	rad pref;
@@ -43,37 +43,11 @@ int main(int argc, char *argv[] ){
  	 }
 	process_limit = atoi(argv[2]);
 
-/*	int state = pipe(fd);
-	int pid = fork();
-	if(pid==0){
-		int kk =10;
-		write(fd[1],&kk,sizeof(kk));
-		exit(0); 	
-	}
-	else{
-		read(fd[0], &n, sizeof(int));
-		printf("written n is : %d\n",n);
-	}*/
-/*	scanf("%d", &n);
-	for(int i=0; i<n; i++){
-		pre[i]=0;
-	}*	for(int i=0; i<n; i++){
-		for(int j =0; j<n; j++){
-			scanf("%d",&dist[i][j]);
-		}
-
-	}*/
 
 	ans=init_arr(ans);
-//	if(n==13)
-		parent(n-11,pref);
-//	else
-//		parent(n-12,pref);
+		parent(n-12,pref);
 	while( (wait(NULL)) > 0 );
-//	pre_add(pre,n,3);
-//	printf("%d %d\n",length(pre,n), pre[1]);
-//	printf("%d\n",fun(0,pre));
-	printf("\nShortest distance: %d  The number of route: %d   \nShortest route: %s \n",ans.distance,route_count*12*10*9*8*6*5*4*3*2 ,ans.best_route_uptonow);
+	printf("\nShortest distance: %d  The number of route: %lld   \nShortest route: %s \n",ans.distance,route_count*2*3*4*5*6*7*8*9*10*11*12 ,ans.best_route_uptonow);
 
 }
 char* int_to_string(rad arr){
@@ -119,7 +93,7 @@ rad min(rad a, rad b){
 	if(a.distance<b.distance) return a;
 	else return b;
 }
-rad fun(rad prefix){
+rad chld(rad prefix){
 	rad ret;
 	ret.distance=1000000007;
 	if(length(prefix,n)== n){
@@ -130,25 +104,10 @@ rad fun(rad prefix){
 		if(visited[i]==true) continue;
 		int here = back(prefix,n);
 		if(dist[here][i]==0) continue ;
-	//	printf("i: %d \n",i);
 		visited[i]=true;
 		prefix = pre_add(prefix,n,i);
-	/*	for(int i=0; i<length(prefix,n); i++){
-			printf("%d ",prefix[i]);
-
-		}
-		printf("\na: %d   dist: %d\n",a, dist[here][i]);
-		for(int i =0; i<=n; i++){
-			printf(visited[i] ? "true " :"false ");
-		}
-		printf("\n");
-		printf("%d , %d , %d \n" ,a,i,c);*/
 		prefix.distance +=dist[here][i];
-		ret = min(fun(prefix),ret);
-		//if(ret > a+dist[here][i]+dist[back(prefix,n)])
-						
-			
-	//	printf("%d , %d , %d : %d\n" ,a+dist[k][i],i,c,ret);
+		ret = min(chld(prefix),ret);
 
 		visited[i] = false;
 		prefix.distance -= dist[here][i];
@@ -171,28 +130,18 @@ void parent(int k, rad arr){
 		route_count++;
 	
 		while(process_count>process_limit){
-			//	printf("in while process:  %d\n", process_count);
-                               // read(fd[0], &sending, sizeof(int));
-                               // process_count = process_count-sending;
-			//	printf("count: %d\n",process_count);
-                               // sending=0;
                         };
                         pid = fork();
 			route_count++;
                         process_count++;
 		if(pid ==0){
 			printf("A child process is executed\n");	
-			rad tmp = fun(arr);
+			rad tmp = chld(arr);
 			int current_distance = tmp.distance;
 			write(fd[1],&current_distance,sizeof(int));
-		//	printf("tmp: %d ", current_distance);
 			char route_string[200];
 		 	strcpy(route_string,int_to_string(tmp));
-                  //      printf("%s \n", route_string);
               	  	write(fd[1], route_string,200);
-			
-		//	int send=1;
-		//	write(fd[1],&send,sizeof(int));
 			exit(0) ;	
 		}
 	}
@@ -204,10 +153,6 @@ void parent(int k, rad arr){
 	    		visited[i] = true;
 	    		arr= pre_add(arr,n,i);
 			arr.distance+=dist[here][i];
-		//	for(int i=0; i<length(arr,n); i++){
-		//		printf("k: %d ",arr.route[i]);
-		//	}
-		//	printf("%d\n",arr.distance);
 			parent(k,arr);
 		 	visited[i] = false;
 			arr.distance -= dist[here][i];
@@ -224,9 +169,9 @@ void handler (int sig){
 		process_count--;
 		read(fd[0], &tmp2, sizeof(int));
 		read(fd[0], best_route, 200);
-		printf("A Child Process is Dead. It returned  Distance:%d   Path:  %s \n",tmp2,best_route);
+		printf("A Child Process is Dead. It returned valuses 1. Distance:%d  2. Path:  %s \n",tmp2,best_route);
 		if(ans.distance>tmp2){	
-			printf("\nThe shortest route was updated   Distanbe: %d    Path: %s\n",tmp2,best_route);
+			printf("\nThe shortest route was updated  1.  Distanbe: %d   2. Path: %s\n\n",tmp2,best_route);
 			ans.distance = tmp2;
 			strcpy(ans.best_route_uptonow,best_route);
 		}
@@ -237,6 +182,6 @@ void sigint_handler(int sig){
 	if(getpid()==parent_pid){
 		if(ans.distance == 2000000008)
 			printf("No child processes have been terminated. So there is no path found\n");
-		printf("\nShortest distance upto now: %d  The number of route upto now : %d * 12! \nShortest route upto now: %s\n",ans.distance,route_count,ans.best_route_uptonow);}
+		printf("\nShortest distance upto now: %d  The number of route upto now : %lld  \nShortest route upto now: %s\n",ans.distance,route_count*2*3*4*5*6*7*8*9*10*11*12 ,ans.best_route_uptonow);}
 	exit(0);
 }
