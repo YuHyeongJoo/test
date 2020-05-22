@@ -5,6 +5,7 @@
 #include<unistd.h>
 #include<sys/wait.h>
 #include<stdlib.h>
+
 #include<signal.h>
 typedef struct route_and_distance{
 	int distance;
