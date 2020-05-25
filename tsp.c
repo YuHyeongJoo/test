@@ -66,13 +66,13 @@ int main(int argc, char *argv[] ){
 		parent(n-11,pref);
 		int child_done_int =0;
 		for(int i=0; i<8; i++){
-			write(child_done[1],&child_done_int.sizeof(int));	
+			write(child_done[1],&child_done_int,sizeof(int));	
 		}
 		exit(0);
 
 	}
 	while(1){
-		printf("Input number 1~4 1 : stat, 2: treads, 3: num N 4: quit ");
+		printf("Input number 1~4 1 : stat, 2: treads, 3: num N  else: quit ");
 		scanf("%d",&menu);
 		if(meun==1){
 
@@ -100,8 +100,10 @@ int main(int argc, char *argv[] ){
 		}
 		else if(menu==3){
 			}
+		else
+			break;
 			
-		}
+		
 	}
 	while( (wait(NULL)) > 0 );
 	printf("\nShortest distance: %d  The number of route: %lld   \nShortest route: %s \n",ans.distance,route_count*2*3*4*5*6*7*8*9*10*11*12 ,ans.best_route_uptonow);
