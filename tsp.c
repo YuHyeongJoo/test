@@ -13,7 +13,7 @@ typedef struct route_and_distance{
 	char best_route_uptonow[200]; 
 }rad;
 rad ans = {2000000008};
-int n=0,process_count =0, process_limit=0, parent_pid,thread_num ,finish[2];
+int n=0,process_count =0, process_limit=0, parent_pid,thread_num ,finish[2],thread_fd[2];
 unsigned long long route_count =0;
 int dist[50][50],consumerid[200] , fd[2],child_id[2], rad_data[2], subtask_done[2], child_done[2];
 bool visited[50] ={true,};
@@ -35,11 +35,13 @@ int main(int argc, char *argv[] ){
 	pref = init_arr(pref);
 	pref.distance= 0;
 	pipe(fd);
+	pipe(thread_fd);
 	pipe(child_id);
 	pipe(rad_data);
 	pipe(finish);
 	pipe(subtask_done);
 	pipe(child_done);
+	fcntl(thread_fd[0],F_SETFL, O_NONBLOCK);
 	FILE *fp = fopen(argv[1],"r");
 	char strTemp[255];
 	fgets(strTemp,sizeof(strTemp),fp);
@@ -63,7 +65,7 @@ int main(int argc, char *argv[] ){
 	int init_pid,menu;
 	init_pid=fork();
 	if(init_pid==0){
-		parent(n-11,pref);
+		parent(n-10,pref);
 		int child_done_int =0;
 		for(int i=0; i<8; i++){
 			write(child_done[1],&child_done_int,sizeof(int));	
@@ -74,11 +76,18 @@ int main(int argc, char *argv[] ){
 	while(1){
 		printf("Input number 1~4 1 : stat, 2: treads, 3: num N  else: quit ");
 		scanf("%d",&menu);
-		if(meun==1){
+		if(menu==1){
 
 		}
 		else if(menu==2){
-                       int thr_num;
+			for(int i=0; i<thread_num; i++){
+				read(child_id[0], &consumerid[i], 4);
+				printf("pid : %d\n",consumerid[i]);
+			}
+
+		}
+		else if(menu==3){
+			int thr_num;
                         printf("input thread num : ");
                         scanf("%d", &thr_num);
                         if(thr_num>8){
@@ -87,18 +96,19 @@ int main(int argc, char *argv[] ){
                         }
                         else if(process_limit>thr_num){
                                 thread_num= thread_num + (process_limit-thr_num);
+				int child_done_int=0;
+				for(int i=0; i<process_limit-thr_num; i++){
+					write(child_done[1],&child_done_int,4);
+				}
                                 process_limit = thr_num;
                         }
                         else if(thr_num>=process_limit){
                                 thread_num = thread_num +(thr_num - process_limit);
                                 process_limit = thr_num;
                         }
-			for(int i=0; i<thread_num; i++){
-				read(id[0], &consumer_id[i], 4);
-			}
 
-		}
-		else if(menu==3){
+			write(thread_fd[1],&thr_num,4);
+			
 			}
 		else
 			break;
@@ -196,10 +206,12 @@ int back(rad arr,int k){
 void parent(int k, rad arr){
 	int pid;
 	if(length(arr,n)==k){
+		printf("a bubtasks created\n");
 		pid=-1;
 		read(thread_fd[0], &process_limit,4);
 		if(process_count<process_limit){
                         pid = fork();
+			printf("a process created\n");
 			if(pid!=0){
 				int child_done_int=1;
 				write(child_id[1],&pid,4);
@@ -225,7 +237,7 @@ void parent(int k, rad arr){
 				strcpy(ans.best_route_uptonow,subtask_route);
 			}
 			subtask = arr.distance;
-			strcpy(subtask_route,int_to_string(arr);
+			strcpy(subtask_route,int_to_string(arr));
 			write(rad_data[1],&subtask,sizeof(int));
 			write(rad_data[1], subtask_route,200);
 		}
@@ -235,8 +247,8 @@ void parent(int k, rad arr){
 				read(child_done[0],&child_done_int, sizeof(int));
 				if(child_done_int ==0) {
 					process_count--;
-					int getpid = getpid();
-					write(child_id[1],&getpid,4);
+					int getid = getpid();
+					write(child_id[1],&getid,4);
 					exit(0);}
 				rad tmp;
 				int tmp_dis;
