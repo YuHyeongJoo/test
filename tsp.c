@@ -15,7 +15,7 @@ typedef struct route_and_distance{
 rad ans = {2000000008};
 int n=0,process_count =1, process_limit, parent_pid;;
 unsigned long long route_count =0;
-int dist[50][50],fd[2];
+int dist[50][50],fd[2],child_id[2], rad_data[2], subtask_done[2], child_done[2];
 bool visited[50] ={true,};
 int length(rad arr, int k);
 rad min(rad a, rad b);
@@ -35,6 +35,8 @@ int main(int argc, char *argv[] ){
 	pref = init_arr(pref);
 	pref.distance= 0;
 	pipe(fd);
+	pipe(rad_data);
+	pipe(child_id);
 	FILE *fp = fopen(argv[1],"r");
 	char strTemp[255];
 	fgets(strTemp,sizeof(strTemp),fp);
@@ -55,7 +57,15 @@ int main(int argc, char *argv[] ){
 
 
 	ans=init_arr(ans);
-	parent(n-12,pref);
+	int init_pid,menu;
+	init_pid=fork();
+	if(init_pid==0)
+		parent(n-11,pref);
+	while(1){
+		printf("Input number 1~4 1 : stat, 2: treads, 3: num N 4: quit ");
+		scanf("%d",&menu);
+		if(meun==1)
+	}
 	while( (wait(NULL)) > 0 );
 	printf("\nShortest distance: %d  The number of route: %lld   \nShortest route: %s \n",ans.distance,route_count*2*3*4*5*6*7*8*9*10*11*12 ,ans.best_route_uptonow);
 
@@ -103,6 +113,15 @@ rad min(rad a, rad b){
 	if(a.distance<b.distance) return a;
 	else return b;
 }
+void string_to_int(rad a, char *s){
+	char *ptr = strtok(s, "->");
+	int i=0;
+	while(ptr !=NULL){
+		a.route[i]=atoi(ptr);
+		i++;
+		ptr = strtok(NULL,"->");
+	}
+}
 rad chld(rad prefix){
 	rad ret;
 	ret.distance=1000000007;
@@ -125,6 +144,7 @@ rad chld(rad prefix){
 	}
 	return ret;
 }
+
 int back(rad arr,int k){
 	int tmp = arr.route[0];
 	for(int i=1; i<k; i++){
@@ -137,22 +157,52 @@ int back(rad arr,int k){
 void parent(int k, rad arr){
 	int pid;
 	if(length(arr,n)==k){
-		route_count++;
-	
-		while(process_count>process_limit){
-                        };
+		pid=-1;
+		if(process_count<process_limit){
                         pid = fork();
-			route_count++;
+			int tmp_dis = arr.distance;
+			char tmp_route[200];
+			strcpy(tmp_route,int_to_string(arr));
                         process_count++;
+			write(process_id[1],&pid,sizeof(pid));
+			write(rad_data[1],&tmp_dis,sizeof(tmp_dis));
+			write(rad_data[1], tmp_route,200);
+			
+		}
+		else{
+			int subtask;
+			char subtask_route[200];
+			while(1){
+				read(subtask_done[0],&subtask, sizeof(int));
+				read(subtask_done[0],subtask_route, 200);
+				if(ans.distance>subtask){
+					ans.distance= subtask;
+					strcpy(ans.best_route_uptonow,subtask_route);
+				}
+			}
+		}
 		if(pid ==0){
-			printf("A child process is executed\n");	
-			rad tmp = chld(arr);
-			int current_distance = tmp.distance;
-			write(fd[1],&current_distance,sizeof(int));
-			char route_string[200];
-		 	strcpy(route_string,int_to_string(tmp));
-              	  	write(fd[1], route_string,200);
-			exit(0) ;	
+			while(1){
+				rad tmp;
+				int tmp_dis;
+				char tmp_route[200];
+				read(rad_data[0],&tmp_dis,sizeof(int));
+				read(rad_data[0],&tmp_route,200);
+				tmp.distance = receive_dis;
+				string_to_int(tmp, tmp_route);
+                       		rad return_rad = chld(tmp);
+				tmp_dis =return_rad.distance;
+				strcpy(tmp_route,int_to_string(return_rad));
+				write(subtask_done[1],&tmp_dis,sizeof(int));
+				write(subtask_done[1],tmp_route,200);
+                  	        int current_distance = tmp.distance;
+                        	write(fd[1],&current_distance,sizeof(int));
+                        	char route_string[200];
+                       		strcpy(route_string,int_to_string(tmp));
+                        	write(fd[1], route_string,200);
+                        	exit(0) ;
+
+			}
 		}
 	}
 	else{	
