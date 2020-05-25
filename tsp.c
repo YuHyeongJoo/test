@@ -13,9 +13,9 @@ typedef struct route_and_distance{
 	char best_route_uptonow[200]; 
 }rad;
 rad ans = {2000000008};
-int n=0,process_count =1, process_limit, parent_pid;;
+int n=0,process_count =0, process_limit, parent_pid, id[2];
 unsigned long long route_count =0;
-int dist[50][50],fd[2],child_id[2], rad_data[2], subtask_done[2], child_done[2];
+int dist[50][50],consumerid[8] , fd[2],child_id[2], rad_data[2], subtask_done[2], child_done[2];
 bool visited[50] ={true,};
 int length(rad arr, int k);
 rad min(rad a, rad b);
@@ -160,6 +160,9 @@ void parent(int k, rad arr){
 		pid=-1;
 		if(process_count<process_limit){
                         pid = fork();
+			if(pid!=0){
+				consumerid[process_count] = pid;
+			}
 			int tmp_dis = arr.distance;
 			char tmp_route[200];
 			strcpy(tmp_route,int_to_string(arr));
